@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/horse_system?serverTimeZone=UTC
+    username: root
+    password: mysql
+  jpa:
+    show-sql: true
+  flyway:
+    locations: "classpath:db/migration"
+flyway:
+  validate-on-migration: false
+  encoding: UTF8MB4
+  out-of-order: true
