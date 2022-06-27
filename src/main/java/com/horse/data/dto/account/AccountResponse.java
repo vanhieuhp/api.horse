@@ -12,5 +12,6 @@ public class AccountResponse {
     private Integer id;
     private String username;
     private Integer status;
+    private List<String> roles;
     private List<String> trainers;
 }

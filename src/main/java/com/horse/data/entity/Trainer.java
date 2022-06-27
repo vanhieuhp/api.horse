@@ -22,6 +22,15 @@ public class Trainer {
     @Column(name = "name", nullable = false)
     private String name;
 
+    @Column(name = "age")
+    private Integer age;
+
+    @Column(name = "gender")
+    private String gender;
+
+    @Column(name = "address")
+    private String address;
+
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.DETACH)
     @JoinColumn(name = "account_id", referencedColumnName = "id")
@@ -31,4 +40,14 @@ public class Trainer {
     @OneToMany(mappedBy = "trainer", orphanRemoval = true)
     private Set<Horse> horses = new HashSet<>();
 
+    public Trainer() {
+    }
+
+    public Trainer(Integer id, String name, Integer age, String gender, String address) {
+        this.id = id;
+        this.name = name;
+        this.age = age;
+        this.gender = gender;
+        this.address = address;
+    }
 }

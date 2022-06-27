@@ -3,6 +3,7 @@ package com.horse.data.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
+
 import javax.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
@@ -28,7 +29,13 @@ public class Account {
     private Integer status;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "account",fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToMany(mappedBy = "account",fetch = FetchType.EAGER, orphanRemoval = true)
     private Set<Trainer> trainers = new HashSet<>();
+
+    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+    @JoinTable(name = "account_role",
+            joinColumns = @JoinColumn(name = "account_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private Set<Role> roles = new HashSet<>();
 
 }
