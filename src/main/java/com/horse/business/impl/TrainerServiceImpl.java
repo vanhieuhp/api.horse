@@ -8,14 +8,14 @@ import com.horse.data.dto.trainer.TrainerResponse;
 import com.horse.data.entity.Account;
 import com.horse.data.entity.Horse;
 import com.horse.data.entity.Trainer;
-import com.horse.data.repository.AccountRepository;
-import com.horse.data.repository.TrainerRepository;
+import com.horse.data.repository.account.AccountRepository;
+import com.horse.data.repository.trainer.TrainerRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.validation.Valid;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,12 +35,10 @@ public class TrainerServiceImpl implements TrainerService {
     @Transactional
     public TrainerResponse createTrainer(TrainerRequest trainerRequest) {
 
-        Account account = accountRepository.findById(trainerRequest.getAccountId())
-                .orElseThrow(() -> new GeneralExceptionHandler("Account not found with id: " + trainerRequest.getAccountId()));
+        Account account = (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         // convert request trainer into trainer
-        Trainer trainer = new Trainer();
-        trainer.setName(trainerRequest.getName());
+        Trainer trainer = mapper.map(trainerRequest, Trainer.class);
         trainer.setAccount(account);
 
         Trainer trainerAfterCreate = trainerRepository.save(trainer);
@@ -55,29 +53,35 @@ public class TrainerServiceImpl implements TrainerService {
 
     @Override
     @Transactional
-    public TrainerResponse updateTrainer(Integer id, TrainerRequest trainerRequest) {
+    public TrainerResponse updateTrainer(Integer trainerId, TrainerRequest trainerRequest) {
 
-        Trainer trainer = trainerRepository.findById(id)
-                .orElseThrow(() -> new GeneralExceptionHandler("Trainer not found with id: " + id));
+        Account account = (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Trainer trainer = account.getTrainers().stream().filter(trainers -> trainers.getId() == trainerId).findFirst().orElse(null);
+        if (trainer == null) {
+            throw new GeneralExceptionHandler("TrainerId not found with account: " + account.getUsername());
+        }
 
-        trainer.setName(trainerRequest.getName() == null ? trainer.getName() : trainerRequest.getName());
-
-
+        // validate field in trainer
         if (trainerRequest.getName() != null) {
-            if (FunctionUtil.checkBlank(trainerRequest.getName()))
-                throw new GeneralExceptionHandler("Name should not be blank");
+            FunctionUtil.checkBlank(trainerRequest.getName(), "name");
             trainer.setName(trainerRequest.getName());
         }
 
-        // set account for trainer
-        if (trainerRequest.getAccountId() != null) {
-
-            Account account = accountRepository.findById(trainerRequest.getAccountId())
-                    .orElseThrow(() -> new GeneralExceptionHandler("Account not found with id: " + trainerRequest.getAccountId()));
-
-            trainer.setAccount(account);
+        if (trainerRequest.getAge() != null) {
+            FunctionUtil.checkAgeTrainer(trainerRequest.getAge());
         }
 
+        if (trainerRequest.getAddress() != null) {
+            FunctionUtil.checkBlank(trainerRequest.getAddress(), "address");
+            trainer.setAddress(trainerRequest.getAddress());
+        }
+
+        if (trainerRequest.getGender() != null) {
+            FunctionUtil.checkBlank(trainerRequest.getGender(), "gender");
+            trainer.setAddress(trainerRequest.getGender());
+        }
+
+        //update trainer
         Trainer trainerAfterUpdate = trainerRepository.save(trainer);
 
         // get horse list for trainer
@@ -86,8 +90,8 @@ public class TrainerServiceImpl implements TrainerService {
         // fill date into trainerResponse and return to controller
         TrainerResponse trainerResponse = mapper.map(trainerAfterUpdate, TrainerResponse.class);
         trainerResponse.setHorses(horses);
-        trainerResponse.setAccountId(trainerAfterUpdate.getAccount().getId());
-        trainerResponse.setAccountName(trainerAfterUpdate.getAccount().getUsername());
+        trainerResponse.setAccountId(account.getId());
+        trainerResponse.setAccountName(account.getUsername());
 
         return trainerResponse;
     }

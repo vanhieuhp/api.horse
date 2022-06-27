@@ -1,4 +1,4 @@
-package com.horse.api.controller;
+package com.horse.controller;
 
 import com.horse.data.dto.trainer.TrainerRequest;
 import com.horse.data.dto.trainer.TrainerResponse;
@@ -26,11 +26,15 @@ public class TrainerController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<TrainerResponse> updateTrainer(@PathVariable("id") Integer id, @RequestBody TrainerRequest trainerRequest) {
+    public ResponseEntity<?> updateTrainer(@PathVariable("id") Integer id, @RequestBody TrainerRequest trainerRequest) {
 
-        TrainerResponse trainerResponse = trainerService.updateTrainer(id , trainerRequest);
+        if (trainerRequest == null) {
+            return new ResponseEntity<>("Update failure", HttpStatus.BAD_REQUEST);
+        } else {
+            TrainerResponse trainerResponse = trainerService.updateTrainer(id , trainerRequest);
+            return new ResponseEntity<>(trainerResponse, HttpStatus.CREATED);
+        }
 
-        return new ResponseEntity<>(trainerResponse, HttpStatus.CREATED);
     }
 
     @DeleteMapping("/{id}")

@@ -6,8 +6,8 @@ import com.horse.data.dto.horse.HorseRequest;
 import com.horse.data.dto.horse.HorseResponse;
 import com.horse.data.entity.Horse;
 import com.horse.data.entity.Trainer;
-import com.horse.data.repository.HorseRepository;
-import com.horse.data.repository.TrainerRepository;
+import com.horse.data.repository.horse.HorseRepository;
+import com.horse.data.repository.trainer.TrainerRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -130,9 +130,8 @@ public class HorseServiceImpl implements HorseService {
     @Transactional
     public void deleteHorse(Integer id) {
 
-        horseRepository.findById(id)
-                .orElseThrow(() -> new GeneralExceptionHandler("Horse not found with id: " + id));
+        horseRepository.findById(id).orElseThrow(() -> new GeneralExceptionHandler("Horse not found with id: " + id));
 
-        horseRepository.deleteHorseById(id);
+        horseRepository.deleteById(id);
     }
 }

@@ -11,3 +11,8 @@ flyway:
   validate-on-migration: false
   encoding: UTF8MB4
   out-of-order: true
+
+jwt:
+  secret: "vanhieu"
+  expirationDateInMs: 600000
+  refreshExpirationDateInMs: 600000

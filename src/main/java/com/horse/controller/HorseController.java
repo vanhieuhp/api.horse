@@ -1,4 +1,4 @@
-package com.horse.api.controller;
+package com.horse.controller;
 
 import com.horse.data.dto.horse.HorseRequest;
 import com.horse.data.dto.horse.HorseResponse;
@@ -26,7 +26,7 @@ public class HorseController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<HorseResponse> updateHorse(@PathVariable("id") Integer id ,@RequestBody @Valid HorseRequest horseRequest) {
+    public ResponseEntity<HorseResponse> updateHorse(@PathVariable("id") Integer id ,@RequestBody HorseRequest horseRequest) {
         HorseResponse horseResponse = horseService.updateHorse(id, horseRequest);
         return new ResponseEntity<>(horseResponse, HttpStatus.OK);
     }

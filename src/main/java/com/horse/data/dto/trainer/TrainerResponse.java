@@ -11,6 +11,9 @@ public class TrainerResponse {
 
     private Integer id;
     private String name;
+    private Integer age;
+    private String gender;
+    private String address;
     private Integer accountId;
     private String accountName;
     private List<String> horses;
