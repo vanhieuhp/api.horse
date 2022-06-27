@@ -6,15 +6,17 @@ import com.horse.config.token.JwtTokenUtil;
 import com.horse.data.dto.account.AccountRequest;
 import com.horse.data.dto.account.AccountResponse;
 import com.horse.data.dto.jwt.AuthenticationRequest;
+import com.horse.data.entity.Account;
+import com.horse.data.entity.Role;
+import com.horse.data.repository.account.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
@@ -29,6 +31,9 @@ import java.util.stream.Collectors;
 public class JwtAuthenticationController {
 
     @Autowired
+    private AccountRepository accountRepository;
+
+    @Autowired
     private AccountService accountService;
 
     @Autowired
@@ -37,7 +42,7 @@ public class JwtAuthenticationController {
     @Autowired
     private AuthenticationManager authenticationManager;
 
-    @PostMapping("/signup")
+    @PostMapping("/register")
     public ResponseEntity<AccountResponse> createAccount(@Valid @RequestBody AccountRequest accountRequest) {
 
         AccountResponse accountResponse = accountService.createAccount(accountRequest);
@@ -61,7 +66,7 @@ public class JwtAuthenticationController {
         List<String> authorities = accountService.getAuthoritiesOfAccount(request.getUsername());
 
         String accessToken = jwtTokenUtil.generateAccessToken(request.getUsername(), authorities);
-        String refreshToken = jwtTokenUtil.generateRefreshToken(request.getUsername(), authorities);
+        String refreshToken = jwtTokenUtil.generateRefreshToken(request.getUsername());
         Map<String, String> tokens = new HashMap<>();
         tokens.put("access_token", accessToken);
         tokens.put("refresh_token", refreshToken);
@@ -69,15 +74,23 @@ public class JwtAuthenticationController {
     }
 
     @GetMapping("/refreshToken")
-    public ResponseEntity<?> refreshToken() {
+    public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) {
 
-        String username = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        List<String> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
-                .stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
+        String headerToken = request.getHeader("Authorization");
+        String refreshToken = headerToken.substring("Bearer ".length());
 
+        String username = jwtTokenUtil.getSubjectFromToken(refreshToken);
+
+        Account account = accountRepository.findByUsername(username)
+                .orElseThrow(() -> new GeneralExceptionHandler("Bad request"));
+        List<String> authorities = account.getRoles().stream().map(Role::getCode).collect(Collectors.toList());
+
+        // Generate refresh token
         String accessToken = jwtTokenUtil.generateAccessToken(username, authorities);
+
         Map<String, String> tokens = new HashMap<>();
         tokens.put("access_token", accessToken);
+        tokens.put("refresh_token", accessToken);
         return new ResponseEntity<>(tokens, HttpStatus.CREATED);
     }
 

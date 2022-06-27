@@ -18,7 +18,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.apache.logging.log4j.util.Strings.isEmpty;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
@@ -36,7 +35,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
         String currentUrl = request.getServletPath();
-        if (currentUrl.equals("/api/login") || currentUrl.equals("/api/signup")){
+        if (currentUrl.equals("/api/login") || currentUrl.equals("/api/register")){
             filterChain.doFilter(request, response);
         } else {
             String bearerToken = request.getHeader(AUTHORIZATION);
@@ -54,12 +53,16 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 return;
             }
 
+            if (request.getServletPath().equals("/api/refreshToken")) {
+                filterChain.doFilter(request, response);
+            }
+
             // get user identity and set it on the spring security context
             Account account = accountRepository.findByUsername(jwtTokenUtil.getSubjectFromToken(token)).orElse(null);
-
-            List<SimpleGrantedAuthority> authorities = null;
-            if (account != null) {
-                authorities = account.getRoles().stream().map(role -> new SimpleGrantedAuthority(role.getCode())).collect(Collectors.toList());
+            List<SimpleGrantedAuthority> authorities = jwtTokenUtil.getAuthoritiesFromToken(token);
+            if (authorities == null || account == null) {
+                GeneralExceptionHandler.sendErrorUnauthorizedException(response);
+                filterChain.doFilter(request, response);
             }
 
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(account, null,authorities);

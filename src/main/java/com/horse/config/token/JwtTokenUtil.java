@@ -44,8 +44,8 @@ public class JwtTokenUtil {
                 .sign(Algorithm.HMAC256(secret.getBytes()));
     }
 
-    public String generateRefreshToken(String username, List<String> authorities) {
-        return JWT.create().withSubject(username).withClaim("roles", authorities)
+    public String generateRefreshToken(String username) {
+        return JWT.create().withSubject(username)
                 .withIssuedAt(new Date(System.currentTimeMillis()))
                 .withExpiresAt(new Date(System.currentTimeMillis() + refreshExpirationDateInMs))
                 .sign(Algorithm.HMAC256(secret.getBytes()));
@@ -55,9 +55,14 @@ public class JwtTokenUtil {
         return getDecodedJWTFromToken(token).getClaim("roles").asList(String.class);
     }
 
-    public List<SimpleGrantedAuthority> getAuthoritiesFromToken(String token) {
-        return getDecodedJWTFromToken(token).getClaim("roles").asList(String.class)
-                .stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
+    public List<SimpleGrantedAuthority> getAuthoritiesFromToken(String token){
+        DecodedJWT decodedJWT = getDecodedJWTFromToken(token);
+        if (decodedJWT.getClaim("roles").isNull()) {
+            return null;
+        } else {
+            return decodedJWT.getClaim("roles").asList(String.class)
+                    .stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
+        }
     }
 
     public boolean validate(String token, HttpServletResponse response) throws IOException {
